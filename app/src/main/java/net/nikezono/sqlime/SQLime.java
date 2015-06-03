@@ -109,7 +109,7 @@ public class SQLime extends InputMethodService
         }
 
 
-        mQwertyKeyboard = new LatinKeyboard(this, R.xml.qwerty);
+        mQwertyKeyboard = new LatinKeyboard(this, R.xml.dvorak);
         mSymbolsKeyboard = new LatinKeyboard(this, R.xml.symbols);
         mSymbolsShiftedKeyboard = new LatinKeyboard(this, R.xml.symbols_shift);
     }
