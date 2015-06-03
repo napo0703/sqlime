@@ -20,6 +20,7 @@ import android.inputmethodservice.InputMethodService;
 import android.inputmethodservice.Keyboard;
 import android.inputmethodservice.KeyboardView;
 import android.text.InputType;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.CompletionInfo;
@@ -68,13 +69,24 @@ public class SQLime extends InputMethodService
     private LatinKeyboard mSymbolsKeyboard;
     private LatinKeyboard mSymbolsShiftedKeyboard;
     private LatinKeyboard mQwertyKeyboard;
+    private LatinKeyboard mDvorakKeyboard;
+    private LatinKeyboard mQwertyCapitalKeyboard;
+    private LatinKeyboard mDvorakCapitalKeyboard;
     
     private LatinKeyboard mCurKeyboard;
 
     private AccelerometerPublisher mAccelerometerPublisher;
 
     private int mCurrentCompletionSentenceIndex = 0;
-    private String[] mCompletionSentences = {"、", "。", "です", "Yo", "だお", "なう", ""};
+    private String[] mCompletionSentences = {"、", "。", "です", "だお", "なう", "なのよさ", "なのだ",
+            "だってばよ", "ですわ", "でしてよ", "ッス", "よ", "っしょ", "じゃ", "なのじゃ", "なのだよ",
+            "でござる", "さ〜", "だもん", "アル", "ナリ〜", "だッッ！", "ザマス", "だズラ", "でやんす",
+            "なんかじゃないんだからね！", "だわさ", "なのです", "にゃ", "", "でゲソ〜", "と思ってた",
+            "に違いない", "なの〜", "っぽいー", "デース", "ニダ", "ぞい", "だとっ……！ふざけるなっ………！",
+            "っ…！！とおるかっ…！！こんなもんっ…！！", "…か", "なっしー", "でごわす", "だドン！",
+            "だっちゃ", "なので", "だよね", "かもしれない", "だよ", "だ", "かな", "である", "？", "！",
+            "ですよ", "か？", "かしら", "クマー", "ざんす", "じゃけん", "じゃん", "ぜよ", "DA☆", "だお",
+            "だじぇ", "だぜ", "ダナ", "であります", "でござんす", "ですぞ", "やで", "ェ・・・", "。常識的に考えて。"};
 
     private String mLastComposed = "";
 
@@ -108,8 +120,10 @@ public class SQLime extends InputMethodService
             mLastDisplayWidth = displayWidth;
         }
 
-
-        mQwertyKeyboard = new LatinKeyboard(this, R.xml.dvorak);
+        mQwertyKeyboard = new LatinKeyboard(this, R.xml.qwerty);
+        mQwertyCapitalKeyboard = new LatinKeyboard(this, R.xml.qwerty_capital);
+        mDvorakKeyboard = new LatinKeyboard(this, R.xml.dvorak);
+        mDvorakCapitalKeyboard = new LatinKeyboard(this, R.xml.dvorak_capital);
         mSymbolsKeyboard = new LatinKeyboard(this, R.xml.symbols);
         mSymbolsShiftedKeyboard = new LatinKeyboard(this, R.xml.symbols_shift);
     }
@@ -409,21 +423,30 @@ public class SQLime extends InputMethodService
      * 小文字/大文字(a/A) あ->ぁ
      */
     private void handleToggleLetterCase(){
-        if(mJapaneseInputMode){
-            String last = mComposing.getLastConverted();
-            mComposing.backspace();
-            mComposing.input(RomaToKanaTranslater.toKomojiDakuonHandakuon(last));
-            compose();
-        }else{
-            // @see http://developer.android.com/reference/android/view/inputmethod/InputConnection.html#getTextBeforeCursor(int, int)
-            CharSequence text = getCurrentInputConnection().getTextBeforeCursor(1,0);
-            if(text.length() < 1) return;
-            InputConnection ic = getCurrentInputConnection();
-            ic.beginBatchEdit();
-            ic.deleteSurroundingText(1,0);
-            commit(RomaToKanaTranslater.toggleAlphabet(text.charAt(0)).toString());
-            ic.endBatchEdit();
+        if (mCurKeyboard == mQwertyKeyboard) {
+            mCurKeyboard = mQwertyCapitalKeyboard;
+            Log.d("a/A", "a -> A");
+        } else {
+            mCurKeyboard = mQwertyKeyboard;
+            Log.d("a/A", "A -> a");
         }
+        mInputView.setKeyboard(mCurKeyboard);
+//        if(mJapaneseInputMode){
+//            String last = mComposing.getLastConverted();
+//            mComposing.backspace();
+//            mComposing.input(RomaToKanaTranslater.toKomojiDakuonHandakuon(last));
+//            compose();
+//        }else{
+//              @see http://developer.android.com/reference/android/view/inputmethod/InputConnection.html#getTextBeforeCursor(int, int)
+//            CharSequence text = getCurrentInputConnection().getTextBeforeCursor(1,0);
+//            if(text.length() < 1) return;
+//            InputConnection ic = getCurrentInputConnection();
+//            ic.beginBatchEdit();
+//            ic.deleteSurroundingText(1,0);
+//            commit(RomaToKanaTranslater.toggleAlphabet(text.charAt(0)).toString());
+//            ic.endBatchEdit();
+//            mCurKeyboard = mQwertyKeyboard;
+//        }
     }
 
     /**
@@ -518,7 +541,7 @@ public class SQLime extends InputMethodService
     public void commitAfterMinutes(String s){
         long start = System.currentTimeMillis();
         //1300msec待機
-        while (System.currentTimeMillis() - start < 1300){
+        while (System.currentTimeMillis() - start < 2000){
             //待機中に補完文字列が変更されたらreturn
             if(!s.equals(mLastComposed)){
                 return;
