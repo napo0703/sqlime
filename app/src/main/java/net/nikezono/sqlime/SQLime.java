@@ -48,7 +48,6 @@ import hugo.weaving.DebugLog;
 @EService
 public class SQLime extends InputMethodService
         implements KeyboardView.OnKeyboardActionListener {
-
     static final boolean PROCESS_HARD_KEYS = true;
 
     private static SQLime mService;
@@ -65,28 +64,24 @@ public class SQLime extends InputMethodService
 
     private boolean mJapaneseInputMode;
     private int mLastDisplayWidth;
-    
+
+    /**
+     *  Keyboard
+     */
+    // Symbol
     private LatinKeyboard mSymbolsKeyboard;
     private LatinKeyboard mSymbolsShiftedKeyboard;
+    // Qwerty
     private LatinKeyboard mQwertyKeyboard;
-    private LatinKeyboard mDvorakKeyboard;
+    private LatinKeyboard mQwertyJapaneseKepboard;
     private LatinKeyboard mQwertyCapitalKeyboard;
-    private LatinKeyboard mDvorakCapitalKeyboard;
-    
+
     private LatinKeyboard mCurKeyboard;
 
     private AccelerometerPublisher mAccelerometerPublisher;
 
     private int mCurrentCompletionSentenceIndex = 0;
-    private String[] mCompletionSentences = {"、", "。", "です", "だお", "なう", "なのよさ", "なのだ",
-            "だってばよ", "ですわ", "でしてよ", "ッス", "よ", "っしょ", "じゃ", "なのじゃ", "なのだよ",
-            "でござる", "さ〜", "だもん", "アル", "ナリ〜", "だッッ！", "ザマス", "だズラ", "でやんす",
-            "なんかじゃないんだからね！", "だわさ", "なのです", "にゃ", "", "でゲソ〜", "と思ってた",
-            "に違いない", "なの〜", "っぽいー", "デース", "ニダ", "ぞい", "だとっ……！ふざけるなっ………！",
-            "っ…！！とおるかっ…！！こんなもんっ…！！", "…か", "なっしー", "でごわす", "だドン！",
-            "だっちゃ", "なので", "だよね", "かもしれない", "だよ", "だ", "かな", "である", "？", "！",
-            "ですよ", "か？", "かしら", "クマー", "ざんす", "じゃけん", "じゃん", "ぜよ", "DA☆", "だお",
-            "だじぇ", "だぜ", "ダナ", "であります", "でござんす", "ですぞ", "やで", "ェ・・・", "。常識的に考えて。"};
+    private String[] mCompletionSentences = {"、", "。", "です", "だお", "なう"};
 
     private String mLastComposed = "";
 
@@ -122,8 +117,7 @@ public class SQLime extends InputMethodService
 
         mQwertyKeyboard = new LatinKeyboard(this, R.xml.qwerty);
         mQwertyCapitalKeyboard = new LatinKeyboard(this, R.xml.qwerty_capital);
-        mDvorakKeyboard = new LatinKeyboard(this, R.xml.dvorak);
-        mDvorakCapitalKeyboard = new LatinKeyboard(this, R.xml.dvorak_capital);
+        mQwertyJapaneseKepboard = new LatinKeyboard(this, R.xml.qwerty_japanese);
         mSymbolsKeyboard = new LatinKeyboard(this, R.xml.symbols);
         mSymbolsShiftedKeyboard = new LatinKeyboard(this, R.xml.symbols_shift);
     }
@@ -166,6 +160,7 @@ public class SQLime extends InputMethodService
         updateCandidatesView(EMPTYLIST);
 
         mJapaneseInputMode = false;
+        mCurKeyboard = mQwertyKeyboard;
         
         // どのキーボードを初期表示にするか、エディタのattributeから判断する
         // @todo すべてのattributeを網羅していない
@@ -180,23 +175,25 @@ public class SQLime extends InputMethodService
                 break;
                 
             case InputType.TYPE_CLASS_TEXT:
-                mCurKeyboard = mQwertyKeyboard;
                 mJapaneseInputMode = true;
-
+                mCurKeyboard = mQwertyJapaneseKepboard;
                 int variation = attribute.inputType & InputType.TYPE_MASK_VARIATION;
                 if (variation == InputType.TYPE_TEXT_VARIATION_PASSWORD ||
                         variation == InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
                     mJapaneseInputMode = false;
+                    mCurKeyboard = mQwertyKeyboard;
                 }
                 
                 if (variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
                         || variation == InputType.TYPE_TEXT_VARIATION_URI
                         || variation == InputType.TYPE_TEXT_VARIATION_FILTER) {
                     mJapaneseInputMode = false;
+                    mCurKeyboard = mQwertyKeyboard;
                 }
                 
                 if ((attribute.inputType & InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE) != 0) {
                     mJapaneseInputMode = true;
+                    mCurKeyboard = mQwertyKeyboard;
                 }
 
                 break;
@@ -364,6 +361,16 @@ public class SQLime extends InputMethodService
             handleToggleLetterCase();
         } else if (primaryCode == Keyboard.KEYCODE_MODE_CHANGE) {
             handleKeyCodeModeChange();
+        } else if (primaryCode == SpecialKeyCode.KEYCODE_CHANGE_JAPANESE_INPUT_MODE){
+            if (mCurKeyboard == mQwertyKeyboard) {
+                mJapaneseInputMode = true;
+                mCurKeyboard = mQwertyJapaneseKepboard;
+                mInputView.setKeyboard(mCurKeyboard);
+            } else if (mCurKeyboard == mQwertyJapaneseKepboard) {
+                mJapaneseInputMode = false;
+                mCurKeyboard = mQwertyKeyboard;
+                mInputView.setKeyboard(mCurKeyboard);
+            }
         } else if (primaryCode == SpecialKeyCode.KEYCODE_MOVE_CARET_LEFT) {
             handleMoveLeft();
         } else if (primaryCode == SpecialKeyCode.KEYCODE_MOVE_CARET_RIGHT) {
@@ -457,7 +464,7 @@ public class SQLime extends InputMethodService
             mCurKeyboard = mSymbolsShiftedKeyboard;
         } else if(mCurKeyboard == mSymbolsShiftedKeyboard){
             mCurKeyboard = mQwertyKeyboard;
-        } else if(mCurKeyboard == mQwertyKeyboard){
+        } else if(mCurKeyboard == mQwertyKeyboard || mCurKeyboard == mQwertyCapitalKeyboard || mCurKeyboard == mQwertyJapaneseKepboard){
             mCurKeyboard = mSymbolsKeyboard;
         }
         mInputView.setKeyboard(mCurKeyboard);

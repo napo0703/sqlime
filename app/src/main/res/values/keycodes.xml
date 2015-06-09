@@ -4,5 +4,6 @@
     <integer name="keycode_toggle_lettercase">-101</integer>
     <integer name="keycode_move_caret_left">-102</integer>
     <integer name="keycode_move_caret_right">-103</integer>
+    <integer name="keycode_change_japanese_input_mode">-104</integer>
     
 </resources>
